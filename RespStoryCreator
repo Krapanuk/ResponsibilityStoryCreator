@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        #buttonContainer {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+
+        #buttonContainer button {
+            flex: 1;
+            margin-right: 10px;
+        }
+#chat li pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    </style>
+</head>
+<body>
+    <div id="chatWindow">
+        <ul id="chat"></ul>
+    </div>
+    <div>
+        <input type="text" id="textInput" placeholder=" Please enter 3 words max...">
+    </div>
+    <div id="buttonContainer">
+        <button id="sendButton" onclick="sendText()">Create Story</button>
+    </div>
+    <script>
+        var messages = [{role:'system', content: 'You are ResponsibilityGPT, a first-class expert in the Responsibility Process described by Chris Avery. With more than 20 years of experience in the Responsibility Process, you know your way around. It is therefore easy for you to write a story in the Responsibility Process model from a maximum of 3 words entered by the user and to subdivide it into the process phases. Here is the familiar process model: Deny: Means to simply ignore the existence of the problem. This is the opposite of focus or attention. Lay Blame: We tell ourselves we are helpless victims of someone else and absolutely innocent ourselves. We tell ourselves that someone else is causing our problem. We believe that someone else has to change/something in order for our problem to go away. Way out: We stop laying blame when we stop looking for a scapegoat. Justify: If you are constantly frustrated and complaining about a situation, you are in justification mode Way out: Consistently become aware of the stories you tell yourself and realize that we are stigmatizing ourselves as helpless. Once we have recognized this, we usually stop justifying ourselves for a problem. Shame: Shame occurs when we blame ourselves: We see ourselves as cause and effect! Way out: First we have to recognize that we are laying blame on ourselves. Only then can we decide to stop: "How much longer do you actually want to feel ashamed?" Quit: If we dont know how to learn and grow by taking responsibility for a problem then we probably need an escape route from our fear. Quitting is this escape route: This is where we find ourselves when the pain from the burden of shame becomes unbearable. Way out: Not allowing ourselves to be overwhelmed by pain and shame. Obligation: We feel trapped, burdened and hopeless. Way out: Dont let yourself be caught! Example: "What can we do to change our weekly meeting from "I have to" to "I want to"?" And: Never do anything you dont want to do! Responsibility: When we intend to act out of responsibility, even when things go wrong, catch ourselves in coping mechanisms faster and faster and face what is true in order to learn, correct and get better, we are acting out of responsibility.'}];
+        var userQuestionCount = 0;
+        async function generateResponse(userInput) {
+            let chat = document.getElementById('chat');
+            chat.style.whiteSpace = 'pre-wrap'; 
+            chat.innerHTML += `<li>My Topic/Input for my personal Responsibility Process-Story: <pre>${escapeHTML(userInput)}</pre></li>`;
+            chat.scrollTop = chat.scrollHeight;
+            var sentMessages = [...messages];
+            messages.push({ role: "user", content: userInput });
+            sentMessages.push({ role: "user", content: userInput + '\nPlease develop the Responsibility Process story for these maximum 3 words.' });
+            userQuestionCount++; 
+
+            if (userQuestionCount > 1) {
+                chat.innerHTML += `<li>ResponsibilityGPT: Unfortunately, I have to end the conversation here. Please reload the page to develop a new story.</li>`;
+                chat.scrollTop = chat.scrollHeight; 
+                return;
+            }
+
+            const response = await fetch('../SECURE PATH/apiCredentials.php', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "gpt-4",
+                    messages: sentMessages,
+                    temperature: 1.0,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log(data);
+                let outputText = data.choices[0].message.content;
+                chat.innerHTML += `<li>Responsibility Process-Story: <pre>${escapeHTML(outputText)}</pre></li>`;
+                chat.scrollTop = chat.scrollHeight;
+                messages.push({ role: "assistant", content: outputText });
+            }
+            else {
+                console.error(`Error: ${response.status}`);
+                return null;
+            }
+        }
+        function escapeHTML(text) {
+            var element = document.createElement('div');
+            element.innerText = text;
+            return element.innerHTML;
+        }
+        function sendText() {
+            const inputElement = document.getElementById('textInput');
+            const buttonContainer = document.getElementById('buttonContainer');
+            const text = inputElement.value.trim();
+            if (text !== '') {
+                generateResponse(text);
+                inputElement.value = '';
+                inputElement.style.display = 'none';
+                buttonContainer.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
